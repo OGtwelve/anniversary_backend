@@ -1,4 +1,4 @@
-package org.zhejianglab.www;
+package org.zhejianglab.anniversary;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
