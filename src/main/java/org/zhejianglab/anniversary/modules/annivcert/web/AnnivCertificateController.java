@@ -24,12 +24,21 @@ public class AnnivCertificateController {
     @PostMapping("/issue")
     public ResponseEntity<Object> issue(@RequestBody @Valid IssueRequest req, HttpServletRequest http) {
         try {
-            // 调用服务层方法来处理证书生成逻辑
-            CertificateDto certificate = svc.issue(req.getName(), req.getStartDate(), req.getWorkNo(),
+            // 调用服务层方法来处理证书生成逻辑，返回的是 ResponseEntity<Object>
+            ResponseEntity<Object> response = svc.issue(req.getName(), req.getStartDate(), req.getWorkNo(),
                     http.getRemoteAddr(), http.getHeader("User-Agent"));
 
-            // 成功时，返回 200 OK 和生成的证书数据
-            return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse("保存成功", certificate));  // 200 OK 和数据 + 成功消息
+            // 从 ResponseEntity 中提取 CertificateDto
+            if (response.getStatusCode() == HttpStatus.OK) {
+                CertificateDto certificate = (CertificateDto) response.getBody();
+
+                // 成功时，返回 200 OK 和生成的证书数据
+                SuccessResponse successResponse = new SuccessResponse("保存成功", certificate);
+                return ResponseEntity.status(HttpStatus.OK).body(successResponse);  // 200 OK 和数据 + 成功消息
+            } else {
+                // 如果服务层返回的是错误，直接返回服务层的错误信息
+                return response;
+            }
         } catch (IllegalStateException ex) {
             // 处理业务异常（例如名额已满）
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -15,5 +15,6 @@ public interface AnnivScsQuotaRepository extends JpaRepository<AnnivScsQuota, St
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     AnnivScsQuota findTopByIssuedLessThanOrderByIssuedAscScsCodeAsc(Integer limitCnt);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<AnnivScsQuota> findAllByOrderByScsCodeAsc();
 }
