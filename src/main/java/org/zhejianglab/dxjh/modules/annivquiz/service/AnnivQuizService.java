@@ -104,9 +104,11 @@ public class AnnivQuizService {
             if (ok) correct++;
         }
         boolean allCorrect = (correct == qs.size());
-        if (!allCorrect) {
-            return new QuizValidateResultDto(false, items, null, null);
-        }
+
+        // 如果必须全对才可以生成证书则放开下面代码
+//        if (!allCorrect) {
+//            return new QuizValidateResultDto(false, items, null, null);
+//        }
 
         // 全对：生成一次性通行令牌（10分钟有效）
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -123,10 +125,10 @@ public class AnnivQuizService {
             t.setAnswerJson(om.writeValueAsString(chosen));
         } catch (Exception ignore) {}
         t.setCorrectCount(correct);
-        t.setAllCorrect(true);
+        t.setAllCorrect(allCorrect);
         ticketRepo.save(t);
 
-        return new QuizValidateResultDto(true, items, token, expire);
+        return new QuizValidateResultDto(allCorrect, items, token, expire);
     }
 
     /** 证书签发前消费通行令牌（一次性） */
@@ -134,7 +136,7 @@ public class AnnivQuizService {
     public void consumePassToken(String token, String ip, String ua) {
         AnnivQuizPassTicket t = ticketRepo.findByToken(token)
                 .orElseThrow(() -> new IllegalStateException("问卷通行令牌无效"));
-        if (!Boolean.TRUE.equals(t.getAllCorrect())) throw new IllegalStateException("问卷未全部正确");
+//        if (!Boolean.TRUE.equals(t.getAllCorrect())) throw new IllegalStateException("问卷未全部正确");
         if (Boolean.TRUE.equals(t.getUsedForCert())) throw new IllegalStateException("通行令牌已使用");
         if (t.getExpiresAt() != null && t.getExpiresAt().isBefore(LocalDateTime.now()))
             throw new IllegalStateException("通行令牌已过期");
