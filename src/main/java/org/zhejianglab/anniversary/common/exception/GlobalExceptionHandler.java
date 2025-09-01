@@ -7,23 +7,51 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.zhejianglab.anniversary.common.response.ErrorResponse;
 
-/**
- * @author :og-twelve
- * @date : 2025/8/30
- */
-@ControllerAdvice
+import org.springframework.http.*;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
+import javax.validation.ConstraintViolationException;
+import java.util.*;
+import org.zhejianglab.anniversary.common.response.ErrorResponse;
+
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
-        ErrorResponse error = new ErrorResponse("Error: " + ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);  // 400 Bad Request
+    // JSON 体校验失败：@Valid @RequestBody
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse<List<Map<String,String>>>> handleMethodArgNotValid(MethodArgumentNotValidException ex) {
+        List<Map<String,String>> errors = new ArrayList<>();
+        for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
+            Map<String,String> m = new HashMap<>();
+            m.put("field", fe.getField());
+            m.put("message", fe.getDefaultMessage());
+            errors.add(m);
+        }
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse<>("参数校验失败", errors));
     }
 
+    // 路径/查询参数校验失败：@Validated + @NotBlank 等
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse<String>> handleConstraintViolation(ConstraintViolationException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse<>("参数校验失败", ex.getMessage()));
+    }
+
+    // 业务异常
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse<Void>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse<>(ex.getMessage(), null));
+    }
+
+    // 兜底
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-        ErrorResponse error = new ErrorResponse("Unexpected error occurred: " + ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);  // 500 Internal Server Error
+    public ResponseEntity<ErrorResponse<Void>> handleOther(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse<>("服务器内部错误", null));
     }
 }
+
 

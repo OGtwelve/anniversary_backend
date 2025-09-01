@@ -1,21 +1,16 @@
 package org.zhejianglab.anniversary.common.response;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * @author :og-twelve
  * @date : 2025/8/30
  */
-@Setter
-@Getter
-@Data
-public class ErrorResponse {
+@Getter @Setter @NoArgsConstructor
+@AllArgsConstructor
+public class ErrorResponse<T> {
     private String message;
-
-    public ErrorResponse(String message) {
-        this.message = message;
-    }
+    private T errors;  // 可为字段错误列表/字符串/null
 }
+
 

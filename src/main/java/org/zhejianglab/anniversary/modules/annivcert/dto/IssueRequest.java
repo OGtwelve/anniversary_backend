@@ -15,15 +15,16 @@ import java.time.LocalDate;
 @Getter
 public class IssueRequest {
 
+    @NotBlank(message = "姓名不能为空")
+    private String name;
 
-    @NotBlank
-    String name;
+    @NotNull(message = "入职日期不能为空")
+    private LocalDate startDate;
 
-    @NotNull
-    LocalDate startDate;
+    @NotBlank(message = "工号不能为空")
+    private String workNo;
 
-    @NotNull
-    String workNo;
-
+    @NotBlank(message = "请先完成问卷并携带 passToken")
+    private String passToken;
 
 }

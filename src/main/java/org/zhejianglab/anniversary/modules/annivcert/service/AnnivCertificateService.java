@@ -9,6 +9,7 @@ import org.zhejianglab.anniversary.common.response.ErrorResponse;
 import org.zhejianglab.anniversary.modules.annivcert.dto.CertificateDto;
 import org.zhejianglab.anniversary.modules.annivcert.entity.*;
 import org.zhejianglab.anniversary.modules.annivcert.repository.*;
+import org.zhejianglab.anniversary.modules.annivquiz.service.AnnivQuizService;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -29,102 +30,99 @@ public class AnnivCertificateService {
     final AnnivScsQuotaRepository quotaRepo;
     final AnnivSeqCounterRepository seqRepo;
 
-    public AnnivCertificateService(AnnivCertificateRepository c, AnnivScsQuotaRepository q, AnnivSeqCounterRepository s) {
-        this.certRepo = c; this.quotaRepo = q; this.seqRepo = s;
+    final AnnivQuizService quizSvc;
+
+    public AnnivCertificateService(AnnivCertificateRepository c, AnnivScsQuotaRepository q,
+                                   AnnivSeqCounterRepository s, AnnivQuizService quizSvc) {
+        this.certRepo = c; this.quotaRepo = q; this.seqRepo = s; this.quizSvc = quizSvc;
     }
 
     @Transactional
-    public ResponseEntity<Object> issue(String name, LocalDate startDate, String workNo, String ip, String ua) {
-        try {
-            // 1) 检查数据库中是否已经存在相同的工号和姓名记录
-            AnnivCertificate existingCertificate = certRepo.findByNameAndWorkNo(name, workNo);
+    public ResponseEntity<Object> issue(String name, LocalDate startDate, String workNo, String ip, String ua, String passToken) {
+        // 先消费问卷通行令牌（一次性）
+        quizSvc.consumePassToken(passToken, ip, ua);
 
-            // 如果已有记录，并且入职日期有更新，则更新记录
-            if (existingCertificate != null) {
-                // 如果 startDate 更新了
-                if (!existingCertificate.getStartDate().equals(startDate)) {
+        // 1) 检查数据库中是否已经存在相同的工号和姓名记录
+        AnnivCertificate existingCertificate = certRepo.findByNameAndWorkNo(name, workNo);
 
-                    // 先检查入职日期是否在 2025-09-06 之前
-                    if (startDate.isAfter(TARGET)) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(new ErrorResponse("入职日期必须是 2025 年 9 月 6 日之前, 请重新选择."));
-                    }
+        // 如果已有记录，并且入职日期有更新，则更新记录
+        if (existingCertificate != null) {
+            // 如果 startDate 更新了
+            if (!existingCertificate.getStartDate().equals(startDate)) {
 
-                    // 更新 startDate 和相关数据
-                    existingCertificate.setStartDate(startDate);
-                    // 计算新的天数（从入职日期到目标日期 2025-09-06）
-                    long days = Math.max(0, ChronoUnit.DAYS.between(startDate, TARGET));
-                    existingCertificate.setDaysToTarget((int) days);
-
-                    // 更新 fullNo（使用新的天数和序号）
-                    String daysSeg = String.format("%04d", Math.min((int) days, 9999)); // 保证 4 位数
-                    String seqSeg = String.format("%04d", existingCertificate.getSeq()); // 保证 4 位数
-                    String fullNo = existingCertificate.getScsCode() + "-" + daysSeg + "-" + seqSeg;
-                    existingCertificate.setFullNo(fullNo);  // 更新 fullNo
-
-                    // 保存更新后的记录
-                    certRepo.save(existingCertificate);
-
-                    // 返回更新后的证书信息
-                    return ResponseEntity.ok(new CertificateDto(existingCertificate.getFullNo(), existingCertificate.getScsCode(),
-                            existingCertificate.getDaysToTarget(), name, startDate, workNo));
-                } else {
-                    return ResponseEntity.ok(new CertificateDto(existingCertificate.getFullNo(), existingCertificate.getScsCode(),
-                            existingCertificate.getDaysToTarget(), name, existingCertificate.getStartDate(), workNo));
+                // 先检查入职日期是否在 2025-09-06 之前
+                if (startDate.isAfter(TARGET)) {
+                    throw new IllegalStateException("入职日期必须是 2025 年 9 月 6 日之前，请重新选择。");
                 }
+
+                // 更新 startDate 和相关数据
+                existingCertificate.setStartDate(startDate);
+                // 计算新的天数（从入职日期到目标日期 2025-09-06）
+                long days = Math.max(0, ChronoUnit.DAYS.between(startDate, TARGET));
+                existingCertificate.setDaysToTarget((int) days);
+
+                // 更新 fullNo（使用新的天数和序号）
+                String daysSeg = String.format("%04d", Math.min((int) days, 9999)); // 保证 4 位数
+                String seqSeg = String.format("%04d", existingCertificate.getSeq()); // 保证 4 位数
+                String fullNo = existingCertificate.getScsCode() + "-" + daysSeg + "-" + seqSeg;
+                existingCertificate.setFullNo(fullNo);  // 更新 fullNo
+
+                // 保存更新后的记录
+                certRepo.save(existingCertificate);
+
+                // 返回更新后的证书信息
+                return ResponseEntity.ok(new CertificateDto(existingCertificate.getFullNo(), existingCertificate.getScsCode(),
+                        existingCertificate.getDaysToTarget(), name, startDate, workNo));
+            } else {
+                return ResponseEntity.ok(new CertificateDto(existingCertificate.getFullNo(), existingCertificate.getScsCode(),
+                        existingCertificate.getDaysToTarget(), name, existingCertificate.getStartDate(), workNo));
             }
+        }
 
-            // 2) 如果没有找到相同记录，生成新的证书
-            // 获取全局序号（锁定，避免并发问题）
-            AnnivSeqCounter counter = seqRepo.lockByName("ANNIV_CERT")
-                    .orElseThrow(() -> new IllegalStateException("系统未初始化"));
-            int next = counter.getLastSeq() + 1;
-            if (next > MAX_TOTAL) throw new IllegalStateException("名额已满");
-            counter.setLastSeq(next);
+        // 2) 如果没有找到相同记录，生成新的证书
+        // 获取全局序号（锁定，避免并发问题）
+        AnnivSeqCounter counter = seqRepo.lockByName("ANNIV_CERT")
+                .orElseThrow(() -> new IllegalStateException("系统未初始化"));
+        int next = counter.getLastSeq() + 1;
+        if (next > MAX_TOTAL) throw new IllegalStateException("名额已满");
+        counter.setLastSeq(next);
 
-            // 3) 选择配额最少的组
+        // 3) 选择配额最少的组
 //        AnnivScsQuota quota = quotaRepo.findTopByIssuedLessThanOrderByIssuedAscScsCodeAsc(125);
 //        if (quota == null) throw new IllegalStateException("所有组已满");
 //        quota.setIssued(quota.getIssued() + 1);
 //        String scs = quota.getScsCode();
 
-            // 如果需要前125个都在一个卫星下的话, 就用下面的机制
-            // 3) 查找所有组，并按顺序逐个组分配
-            List<AnnivScsQuota> quotas = quotaRepo.findAllByOrderByScsCodeAsc(); // 查找所有组并按 SCS 码排序
-            String scs = getScs(quotas);
+        // 如果需要前125个都在一个卫星下的话, 就用下面的机制
+        // 3) 查找所有组，并按顺序逐个组分配
+        List<AnnivScsQuota> quotas = quotaRepo.findAllByOrderByScsCodeAsc(); // 查找所有组并按 SCS 码排序
+        String scs = getScs(quotas);
 
 
-            // 4) 计算天数（负数按 0 计算）
-            long days = Math.max(0, ChronoUnit.DAYS.between(startDate, TARGET));
+        // 4) 计算天数（负数按 0 计算）
+        long days = Math.max(0, ChronoUnit.DAYS.between(startDate, TARGET));
 
-            // 5) 拼装完整证书号：SCSxx-<天数>-<顺序号>
-            String daysSeg = String.format("%04d", Math.min((int) days, 9999)); // 保证 4 位数
-            String seqSeg  = String.format("%04d", next); // 保证 4 位数
-            String fullNo  = scs + "-" + daysSeg + "-" + seqSeg;
+        // 5) 拼装完整证书号：SCSxx-<天数>-<顺序号>
+        String daysSeg = String.format("%04d", Math.min((int) days, 9999)); // 保证 4 位数
+        String seqSeg  = String.format("%04d", next); // 保证 4 位数
+        String fullNo  = scs + "-" + daysSeg + "-" + seqSeg;
 
-            // 6) 创建证书记录
-            AnnivCertificate c = new AnnivCertificate();
-            c.setFullNo(fullNo);
-            c.setScsCode(scs);
-            c.setSeq(next);
-            c.setDaysToTarget((int) days);
-            c.setName(name);
-            c.setStartDate(startDate);
-            c.setWorkNo(workNo);
-            c.setIp(ip); c.setUa(ua);
+        // 6) 创建证书记录
+        AnnivCertificate c = new AnnivCertificate();
+        c.setFullNo(fullNo);
+        c.setScsCode(scs);
+        c.setSeq(next);
+        c.setDaysToTarget((int) days);
+        c.setName(name);
+        c.setStartDate(startDate);
+        c.setWorkNo(workNo);
+        c.setIp(ip); c.setUa(ua);
 
-            // 保存证书记录
-            certRepo.saveAndFlush(c);
+        // 保存证书记录
+        certRepo.saveAndFlush(c);
 
-            // 返回证书数据
-            return ResponseEntity.ok(new CertificateDto(fullNo, scs, (int) days, name, startDate, workNo));
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("Error: " + ex.getMessage()));  // 400 Bad Request
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Unexpected error occurred: " + ex.getMessage()));  // 500 Internal Server Error
-        }
+        // 返回证书数据
+        return ResponseEntity.ok(new CertificateDto(fullNo, scs, (int) days, name, startDate, workNo));
     }
 
     private static String getScs(List<AnnivScsQuota> quotas) {
