@@ -27,4 +27,7 @@ public class IssueRequest {
     @NotBlank(message = "请先完成问卷并携带 passToken")
     private String passToken;
 
+    @NotBlank(message = "请先填写祝福语再来吧")
+    private String wishes; // 祝福语
+
 }

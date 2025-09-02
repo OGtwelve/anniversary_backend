@@ -23,5 +23,6 @@ public class CertificateDto {
     String name;
     LocalDate startDate;
     String workNo;
+    String wishes;
 
 }

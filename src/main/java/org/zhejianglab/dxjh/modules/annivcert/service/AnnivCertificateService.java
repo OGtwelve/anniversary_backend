@@ -36,7 +36,7 @@ public class AnnivCertificateService {
     }
 
     @Transactional
-    public ResponseEntity<Object> issue(String name, LocalDate startDate, String workNo, String ip, String ua, String passToken) {
+    public ResponseEntity<Object> issue(String name, LocalDate startDate, String workNo, String ip, String ua, String passToken, String wishes) {
         // 先消费问卷通行令牌（一次性）
         quizSvc.consumePassToken(passToken, ip, ua);
 
@@ -65,15 +65,18 @@ public class AnnivCertificateService {
                 String fullNo = existingCertificate.getScsCode() + "-" + daysSeg + "-" + seqSeg;
                 existingCertificate.setFullNo(fullNo);  // 更新 fullNo
 
+                // 更新祝福语
+                existingCertificate.setWishes(wishes);
+
                 // 保存更新后的记录
                 certRepo.save(existingCertificate);
 
                 // 返回更新后的证书信息
                 return ResponseEntity.ok(new CertificateDto(existingCertificate.getFullNo(), existingCertificate.getScsCode(),
-                        existingCertificate.getDaysToTarget(), name, startDate, workNo));
+                        existingCertificate.getDaysToTarget(), name, startDate, workNo, wishes));
             } else {
                 return ResponseEntity.ok(new CertificateDto(existingCertificate.getFullNo(), existingCertificate.getScsCode(),
-                        existingCertificate.getDaysToTarget(), name, existingCertificate.getStartDate(), workNo));
+                        existingCertificate.getDaysToTarget(), name, existingCertificate.getStartDate(), workNo, wishes));
             }
         }
 
@@ -114,13 +117,14 @@ public class AnnivCertificateService {
         c.setName(name);
         c.setStartDate(startDate);
         c.setWorkNo(workNo);
+        c.setWishes(wishes);
         c.setIp(ip); c.setUa(ua);
 
         // 保存证书记录
         certRepo.saveAndFlush(c);
 
         // 返回证书数据
-        return ResponseEntity.ok(new CertificateDto(fullNo, scs, (int) days, name, startDate, workNo));
+        return ResponseEntity.ok(new CertificateDto(fullNo, scs, (int) days, name, startDate, workNo, wishes));
     }
 
     private static String getScs(List<AnnivScsQuota> quotas) {

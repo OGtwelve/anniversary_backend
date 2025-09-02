@@ -1,0 +1,71 @@
+ scp -P 22 "D:/zhijianglab/anniversary_backend/target/anniversary_backend-0.0.1-SNAPSHOT.jar" `
+     root@43.138.113.213:/srv/anniv-backend/releases/app.jar
+
+
+sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 -Dserver.port=8081 -Dspring.profiles.active=prod -Dspring.datasource.url="jdbc:mysql://127.0.0.1:3306/zjlab?useSSL=false&serverTimezone=Asia/Jakarta&characterEncoding=utf8" -Dspring.datasource.username=root -Dspring.datasource.password='Tupac1963!' -jar /srv/anniv-backend/releases/app.jar
+
+
+
+scp D:\zhijianglab\anniversary_backend\target\anniversary_backend-0.0.1-SNAPSHOT.jar zjlab@10.101.88.143:/tmp/anniv.jar
+
+# 进入服务器后执行（需要有 sudo 权限）
+sudo useradd -r -s /usr/sbin/nologin app 2>/dev/null || true
+sudo mkdir -p /srv/anniv-backend/releases
+
+TS=$(date +%Y%m%d%H%M%S)
+sudo mv /tmp/anniv.jar /srv/anniv-backend/releases/anniv-$TS.jar
+
+# 指向最新版本
+sudo ln -sfn /srv/anniv-backend/releases/anniv-$TS.jar /srv/anniv-backend/app.jar
+
+# 统一归属（运行账号 app）
+sudo chown -R app:app /srv/anniv-backend
+
+sudo tee /etc/default/anniv-backend >/dev/null <<'EOF'
+SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=8081
+DB_URL=jdbc:mysql://127.0.0.1:3306/zjlab?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jakarta&characterEncoding=utf8
+DB_USERNAME=appuser
+DB_PASSWORD=Strong!Passw0rd
+JPA_DDL=validate
+JAVA_OPTS="-Xms512m -Xmx1024m -Dfile.encoding=UTF-8"
+EOF
+
+sudo tee /etc/systemd/system/anniv-backend.service >/dev/null <<'EOF'
+[Unit]
+Description=Anniversary Spring Boot Backend
+After=network.target mysql.service
+[Service]
+User=app
+WorkingDirectory=/srv/anniv-backend
+EnvironmentFile=/etc/default/anniv-backend
+ExecStart=/usr/bin/java $JAVA_OPTS \
+ -Dserver.port=${SERVER_PORT} \
+ -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} \
+ -Dspring.jpa.hibernate.ddl-auto=${JPA_DDL} \
+ -Dspring.datasource.url=${DB_URL} \
+ -Dspring.datasource.username=${DB_USERNAME} \
+ -Dspring.datasource.password=${DB_PASSWORD} \
+ -jar /srv/anniv-backend/app.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now anniv-backend
+sudo systemctl status anniv-backend --no-pager -l | sed -n '1,14p'
+curl -i http://127.0.0.1:8081/actuator/health
+
+
+sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 \
+ -Dserver.port=8081 \
+ -Dspring.profiles.active=prod \
+ -Dspring.jpa.hibernate.ddl-auto=validate \
+ -Dspring.datasource.url="jdbc:mysql://127.0.0.1:3306/zjlab?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8&serverTimezone=Asia/Jakarta" \
+ -Dspring.datasource.username="appuser" \
+ -Dspring.datasource.password="Tupac1963!" \
+ -jar /srv/anniv-backend/app.jar
+

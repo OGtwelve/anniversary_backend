@@ -31,5 +31,6 @@ public class QuizDto {
         Long id;
         Integer idxNo;
         String content;
+        boolean ifCorrect; // 仅在结果中返回
     }
 }

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS anniv_certificate
     name           VARCHAR(64)  NOT NULL,
     start_date     DATE         NOT NULL,
     work_no        VARCHAR(32)  NOT NULL,
+    wishes         VARCHAR(255) NULL,
     ip             VARCHAR(45)  NULL,
     ua             VARCHAR(255) NULL,
     created_at     DATETIME     NULL,

@@ -24,7 +24,7 @@ public class AnnivCertificateController {
     public ResponseEntity<Object> issue(@RequestBody @Valid IssueRequest req, HttpServletRequest http) {
         // 调用服务层方法来处理证书生成逻辑，返回的是 ResponseEntity<Object>
         ResponseEntity<Object> response = svc.issue(req.getName(), req.getStartDate(), req.getWorkNo(),
-                http.getRemoteAddr(), http.getHeader("User-Agent"), req.getPassToken());
+                http.getRemoteAddr(), http.getHeader("User-Agent"), req.getPassToken(), req.getWishes());
 
         // 从 ResponseEntity 中提取 CertificateDto
         if (response.getStatusCode() == HttpStatus.OK) {

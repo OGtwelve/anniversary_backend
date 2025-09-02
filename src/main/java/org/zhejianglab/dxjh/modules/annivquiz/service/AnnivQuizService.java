@@ -60,6 +60,7 @@ public class AnnivQuizService {
                 od.setId(op.getId());
                 od.setIdxNo(op.getIdxNo());
                 od.setContent(op.getContent());
+                od.setIfCorrect(op.getIsCorrect());
                 return od;
             }).collect(Collectors.toList());
 
