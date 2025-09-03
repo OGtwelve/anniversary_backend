@@ -26,7 +26,7 @@ SPRING_PROFILES_ACTIVE=prod
 SERVER_PORT=8081
 DB_URL=jdbc:mysql://127.0.0.1:3306/zjlab?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jakarta&characterEncoding=utf8
 DB_USERNAME=appuser
-DB_PASSWORD=Strong!Passw0rd
+DB_PASSWORD=Tupac1963!
 JPA_DDL=validate
 JAVA_OPTS="-Xms512m -Xmx1024m -Dfile.encoding=UTF-8"
 EOF
@@ -58,6 +58,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now anniv-backend
 sudo systemctl status anniv-backend --no-pager -l | sed -n '1,14p'
 curl -i http://127.0.0.1:8081/actuator/health
+
+sudo journalctl -u anniv-backend -n 50 --no-pager
 
 
 sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 \

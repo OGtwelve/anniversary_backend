@@ -26,17 +26,11 @@ public class AnnivCertificateController {
         ResponseEntity<Object> response = svc.issue(req.getName(), req.getStartDate(), req.getWorkNo(),
                 http.getRemoteAddr(), http.getHeader("User-Agent"), req.getPassToken(), req.getWishes());
 
-        // 从 ResponseEntity 中提取 CertificateDto
-        if (response.getStatusCode() == HttpStatus.OK) {
-            CertificateDto certificate = (CertificateDto) response.getBody();
+        CertificateDto certificate = (CertificateDto) response.getBody();
 
-            // 成功时，返回 200 OK 和生成的证书数据
-            SuccessResponse successResponse = new SuccessResponse("保存成功", certificate);
-            return ResponseEntity.status(HttpStatus.OK).body(successResponse);  // 200 OK 和数据 + 成功消息
-        } else {
-            // 如果服务层返回的是错误，直接返回服务层的错误信息
-            return response;
-        }
+        // 成功时，返回 200 OK 和生成的证书数据
+        SuccessResponse successResponse = new SuccessResponse("保存成功", certificate);
+        return ResponseEntity.status(HttpStatus.OK).body(successResponse);  // 200 OK 和数据 + 成功消息
     }
 
 }

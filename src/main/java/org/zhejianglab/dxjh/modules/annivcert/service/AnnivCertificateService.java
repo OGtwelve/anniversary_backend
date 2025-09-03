@@ -21,7 +21,11 @@ import java.util.List;
 public class AnnivCertificateService {
 
     static final LocalDate TARGET = LocalDate.of(2025, 9, 6);
-    static final int MAX_TOTAL = 1500;
+    // 1) 放开总名额
+    static final int MAX_TOTAL = 2000;
+
+    // 每组基础配额（前 12 组 * 125 = 1500）
+    static final int GROUP_LIMIT = 125;
     static final int SEG_WIDTH = 4;
 
     final AnnivCertificateRepository certRepo;
@@ -128,23 +132,23 @@ public class AnnivCertificateService {
     }
 
     private static String getScs(List<AnnivScsQuota> quotas) {
-        AnnivScsQuota selectedQuota = null;
-        for (AnnivScsQuota quota : quotas) {
-            // 如果组的配额尚未满
-            if (quota.getIssued() < 125) {
-                selectedQuota = quota;
-                break;  // 找到第一个剩余配额未满的组，跳出循环
+        if (quotas == null || quotas.isEmpty()) {
+            throw new IllegalStateException("配额未初始化");
+        }
+
+        // 先顺序填满每组（SCS01 -> SCS12）
+        for (AnnivScsQuota q : quotas) {
+            if (q.getIssued() < GROUP_LIMIT) {
+                q.setIssued(q.getIssued() + 1);
+                return q.getScsCode();
             }
         }
 
-        // 如果所有组都已满，抛出异常
-        if (selectedQuota == null) {
-            throw new IllegalStateException("所有组已满");
-        }
-
-        // 更新该组的配额已使用人数
-        selectedQuota.setIssued(selectedQuota.getIssued() + 1);
-        return selectedQuota.getScsCode();
+        // 超过当前配额（1500）后：统一落在最后一条配额
+        AnnivScsQuota last = quotas.get(quotas.size() - 1);
+        last.setIssued(last.getIssued() + 1); // 允许超过 125，用于统计
+        return last.getScsCode();
     }
+
 
 }
