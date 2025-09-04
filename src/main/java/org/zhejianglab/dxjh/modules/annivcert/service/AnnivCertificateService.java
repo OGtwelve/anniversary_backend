@@ -39,6 +39,10 @@ public class AnnivCertificateService {
         this.certRepo = c; this.quotaRepo = q; this.seqRepo = s; this.quizSvc = quizSvc;
     }
 
+    public List<AnnivCertificate> findAllForExport() {
+        return certRepo.findAll(); // 可改成按时间/条件筛选
+    }
+
     @Transactional
     public ResponseEntity<Object> issue(String name, LocalDate startDate, String workNo, String ip, String ua, String passToken, String wishes) {
         // 先消费问卷通行令牌（一次性）

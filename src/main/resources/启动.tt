@@ -5,12 +5,15 @@
 sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 -Dserver.port=8081 -Dspring.profiles.active=prod -Dspring.datasource.url="jdbc:mysql://127.0.0.1:3306/zjlab?useSSL=false&serverTimezone=Asia/Jakarta&characterEncoding=utf8" -Dspring.datasource.username=root -Dspring.datasource.password='Tupac1963!' -jar /srv/anniv-backend/releases/app.jar
 
 
+systemctl stop anniv-backend || true
+
 
 scp D:\zhijianglab\anniversary_backend\target\anniversary_backend-0.0.1-SNAPSHOT.jar zjlab@10.101.88.143:/tmp/anniv.jar
 
 # 进入服务器后执行（需要有 sudo 权限）
 sudo useradd -r -s /usr/sbin/nologin app 2>/dev/null || true
 sudo mkdir -p /srv/anniv-backend/releases
+# 第一次执行需要上面两行代码
 
 TS=$(date +%Y%m%d%H%M%S)
 sudo mv /tmp/anniv.jar /srv/anniv-backend/releases/anniv-$TS.jar
@@ -60,6 +63,35 @@ sudo systemctl status anniv-backend --no-pager -l | sed -n '1,14p'
 curl -i http://127.0.0.1:8081/actuator/health
 
 sudo journalctl -u anniv-backend -n 50 --no-pager
+
+mysql -h 127.0.0.1 -P 3306 -u appuser -p
+
+Tupac1963!
+
+USE zjlab;
+
+UPDATE anniv_gate_config g
+JOIN (
+  SELECT id FROM anniv_gate_config
+  WHERE is_active = 1
+  ORDER BY id DESC
+  LIMIT 1
+) x ON g.id = x.id
+SET g.open_at = '2025-09-05 09:00:00',
+    g.updated_at = NOW();
+
+USE zjlab;
+
+UPDATE anniv_gate_config g
+JOIN (
+  SELECT id FROM anniv_gate_config
+  WHERE is_active = 1
+  ORDER BY id DESC
+  LIMIT 1
+) x ON g.id = x.id
+SET g.open_at = '2025-09-01 09:00:00',
+    g.updated_at = NOW();
+
 
 
 sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 \
