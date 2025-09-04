@@ -6,6 +6,7 @@ sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 -Dserver.port
 
 
 systemctl stop anniv-backend || true
+systemctl start anniv-backend || true
 
 
 scp D:\zhijianglab\anniversary_backend\target\anniversary_backend-0.0.1-SNAPSHOT.jar zjlab@10.101.88.143:/tmp/anniv.jar
@@ -92,7 +93,10 @@ JOIN (
 SET g.open_at = '2025-09-01 09:00:00',
     g.updated_at = NOW();
 
-
+DROP DATABASE IF EXISTS `zjlab`;
+CREATE DATABASE `zjlab`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_0900_ai_ci;
 
 sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 \
  -Dserver.port=8081 \

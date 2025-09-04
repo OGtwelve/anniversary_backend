@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS anniv_quiz_pass_ticket
     answer_json   JSON         NULL,            -- 本次答案（questionId->optionId）
     correct_count INT          NOT NULL DEFAULT 0,
     all_correct   TINYINT(1)   NOT NULL DEFAULT 0,
+    updated_at     DATETIME     NULL,
     CONSTRAINT fk_pass_quiz FOREIGN KEY (quiz_id) REFERENCES anniv_quiz (id),
     KEY idx_expire (expires_at),
     KEY idx_used (used_for_cert)

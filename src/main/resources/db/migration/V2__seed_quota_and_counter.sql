@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS anniv_quiz_question
     quiz_id BIGINT       NOT NULL,
     idx_no  INT          NOT NULL, -- 展示顺序
     content VARCHAR(255) NOT NULL,
+    created_at     DATETIME     NULL,
+    updated_at     DATETIME     NULL,
     CONSTRAINT fk_qzq_quiz FOREIGN KEY (quiz_id) REFERENCES anniv_quiz (id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
@@ -30,6 +32,8 @@ CREATE TABLE IF NOT EXISTS anniv_quiz_option
     idx_no      INT          NOT NULL,
     content     VARCHAR(255) NOT NULL,
     is_correct  TINYINT(1)   NOT NULL DEFAULT 0,
+    created_at     DATETIME     NULL,
+    updated_at     DATETIME     NULL,
     CONSTRAINT fk_qzo_question FOREIGN KEY (question_id) REFERENCES anniv_quiz_question (id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
