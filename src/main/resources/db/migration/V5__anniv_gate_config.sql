@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS anniv_gate_config
     is_active  TINYINT(1)  NOT NULL DEFAULT 1,
     open_at    DATETIME    NOT NULL,
     close_at   DATETIME    NULL,
-    remark     VARCHAR(255),
+    remark     LONGTEXT,
     created_at DATETIME,
     updated_at DATETIME,
     PRIMARY KEY (id),

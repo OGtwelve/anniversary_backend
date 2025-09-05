@@ -38,7 +38,7 @@ public class AnnivCertificate extends BaseEntity {
     @Column(name="work_no", nullable=false)
     String workNo;
 
-    @Column(name="wishes", length=256)
+    @Column(name = "wishes", columnDefinition = "LONGTEXT")
     String wishes;
 
     String ip;

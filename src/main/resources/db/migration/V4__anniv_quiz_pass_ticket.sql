@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS anniv_quiz_pass_ticket
     token         VARCHAR(64)  NOT NULL UNIQUE, -- 一次性通行令牌（UUID）
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at    DATETIME     NOT NULL,
-    ip            VARCHAR(45)  NULL,
-    ua            VARCHAR(255) NULL,
+    ip            LONGTEXT  NULL,
+    ua            LONGTEXT NULL,
     used_for_cert TINYINT(1)   NOT NULL DEFAULT 0,
     -- 统计信息（便于审计）
     answer_json   JSON         NULL,            -- 本次答案（questionId->optionId）

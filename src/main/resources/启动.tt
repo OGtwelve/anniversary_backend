@@ -78,7 +78,7 @@ JOIN (
   ORDER BY id DESC
   LIMIT 1
 ) x ON g.id = x.id
-SET g.open_at = '2025-09-05 09:00:00',
+SET g.open_at = '2025-09-05 09:30:00',
     g.updated_at = NOW();
 
 USE zjlab;

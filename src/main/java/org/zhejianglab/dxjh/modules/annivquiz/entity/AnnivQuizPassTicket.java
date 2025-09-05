@@ -37,10 +37,10 @@ public class AnnivQuizPassTicket extends BaseEntity {
     LocalDateTime expiresAt;
 
     /** 提交端信息（可选校验） */
-    @Column(length = 45)
+    @Column(name = "ip", columnDefinition = "LONGTEXT")
     String ip;
 
-    @Column(length = 255)
+    @Column(name = "ua", columnDefinition = "LONGTEXT")
     String ua;
 
     /** 是否已用于签发证书（防重复使用） */
