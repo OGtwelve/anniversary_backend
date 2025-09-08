@@ -4,12 +4,16 @@ package org.zhejianglab.dxjh.modules.annivcert.service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.zhejianglab.dxjh.modules.admin.dto.AdminCertificateRowDto;
 import org.zhejianglab.dxjh.modules.annivcert.dto.CertificateDto;
+import org.zhejianglab.dxjh.modules.annivcert.dto.UpdateCertificateRequest;
 import org.zhejianglab.dxjh.modules.annivcert.entity.*;
 import org.zhejianglab.dxjh.modules.annivcert.repository.*;
 import org.zhejianglab.dxjh.modules.annivquiz.service.AnnivQuizService;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -21,6 +25,8 @@ import java.util.List;
 public class AnnivCertificateService {
 
     static final LocalDate TARGET = LocalDate.of(2025, 9, 6);
+    private static final DateTimeFormatter D  = DateTimeFormatter.ofPattern("yyyy/M/d");
+    private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy/M/d HH:mm:ss");
     // 1) 放开总名额
     static final int MAX_TOTAL = 2000;
 
@@ -134,6 +140,50 @@ public class AnnivCertificateService {
         // 返回证书数据
         return ResponseEntity.ok(new CertificateDto(fullNo, scs, (int) days, name, startDate, workNo, wishes));
     }
+
+    @Transactional
+    public AdminCertificateRowDto update(String fullNo, UpdateCertificateRequest req) {
+        AnnivCertificate c = certRepo.findByFullNo(fullNo)
+                .orElseThrow(() -> new IllegalArgumentException("证书不存在: " + fullNo));
+
+        if (req.getName() != null)       c.setName(req.getName());
+        if (req.getEmployeeId() != null) c.setWorkNo(req.getEmployeeId());
+        if (req.getBlessing() != null)   c.setWishes(req.getBlessing());
+
+        if (req.getJoinDate() != null) {
+            c.setStartDate(req.getJoinDate());
+            // 以 joinDate 为准重算 daysToTarget
+            int days = (int) (TARGET.toEpochDay() - req.getJoinDate().toEpochDay());
+            c.setDaysToTarget(Math.max(days, 0)); // 不为负
+        } else if (req.getWorkYears() != null) {
+            c.setDaysToTarget(Math.max(req.getWorkYears(), 0));
+        }
+
+        // 保存
+        c = certRepo.save(c);
+
+        // 返回行 DTO（与列表相同格式）
+        String id = c.getFullNo();
+        String name = c.getName();
+        String empId = c.getWorkNo();
+        String joinDate = c.getStartDate() != null ? D.format(c.getStartDate()) : "";
+        int workDays = c.getDaysToTarget() != null ? c.getDaysToTarget() : 0;
+        String blessing = c.getWishes();
+        String createdAt = c.getCreatedAt() != null ? DT.format(c.getCreatedAt().atZone(ZoneId.systemDefault())) : "";
+
+        return new AdminCertificateRowDto(id, name, empId, joinDate, workDays, blessing, createdAt);
+    }
+
+    @Transactional
+    public void delete(String fullNo) {
+        long n = certRepo.deleteByFullNo(fullNo);
+        if (n == 0) {
+            throw new IllegalArgumentException("证书不存在: " + fullNo);
+        }
+    }
+
+
+
 
     private static String getScs(List<AnnivScsQuota> quotas) {
         if (quotas == null || quotas.isEmpty()) {

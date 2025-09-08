@@ -9,6 +9,7 @@ import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivCertificate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author :og-twelve
@@ -36,5 +37,9 @@ public interface AnnivCertificateRepository extends JpaRepository<AnnivCertifica
     @Query(value = "select date(c.created_at) as d, count(*) as cnt from anniv_certificate c where c.created_at >= :start and c.created_at < :end group by date(c.created_at) order by d", nativeQuery = true)
     List<Object[]> countDaily(@Param("start") LocalDateTime start,
                               @Param("end") LocalDateTime end);
+
+    Optional<AnnivCertificate> findByFullNo(String fullNo);
+
+    long deleteByFullNo(String fullNo);
 
 }

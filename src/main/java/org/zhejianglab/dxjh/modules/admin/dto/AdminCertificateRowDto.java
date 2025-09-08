@@ -17,5 +17,4 @@ public class AdminCertificateRowDto {
     int    workYears;   // 实际是“工龄天数”，前端字段名沿用
     String blessing;
     String createdAt;   // yyyy/MM/dd HH:mm:ss
-    String status;      // "generated"
 }

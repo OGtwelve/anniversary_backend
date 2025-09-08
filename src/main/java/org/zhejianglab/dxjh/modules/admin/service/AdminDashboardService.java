@@ -67,9 +67,8 @@ public class AdminDashboardService {
         int workDays = c.getDaysToTarget() != null ? c.getDaysToTarget() : 0; // 前端字段叫 workYears
         String blessing = c.getWishes();
         String createdAt = c.getCreatedAt() != null ? dt.format(c.getCreatedAt()) : "";
-        String status = "generated";
 
-        return new AdminCertificateRowDto(id, name, empId, joinDate, workDays, blessing, createdAt, status);
+        return new AdminCertificateRowDto(id, name, empId, joinDate, workDays, blessing, createdAt);
     }
 
     public AdminTrendDto getTrend(int days) {
