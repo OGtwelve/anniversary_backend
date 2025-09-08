@@ -3,6 +3,7 @@ package org.zhejianglab.dxjh.modules.admin.web;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.zhejianglab.dxjh.common.dto.PageResult;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminCertificateRowDto;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminStatsDto;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminTrendDto;
@@ -28,10 +29,13 @@ public class AdminDashboardController {
 
     // 可加简单分页入参；前端当前不传就给 200 条
     @GetMapping("/certificates")
-    public ResponseEntity<List<AdminCertificateRowDto>> certificates(
-            @RequestParam(value = "limit", defaultValue = "200") int limit) {
-        return ResponseEntity.ok(svc.listCertificates(Math.max(1, Math.min(limit, 500))));
+    public ResponseEntity<PageResult<AdminCertificateRowDto>> certificates(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(svc.listCertificates(page, size));
     }
+
 
     @GetMapping("/trend")
     public ResponseEntity<AdminTrendDto> trend(

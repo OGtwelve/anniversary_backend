@@ -1,8 +1,10 @@
 package org.zhejianglab.dxjh.modules.admin.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.zhejianglab.dxjh.common.dto.PageResult;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminCertificateRowDto;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminStatsDto;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminTrendDto;
@@ -49,14 +51,21 @@ public class AdminDashboardService {
         return new AdminStatsDto(total, todayCount, avgYears, blessings);
     }
 
-    public List<AdminCertificateRowDto> listCertificates(int limit) {
-        DateTimeFormatter d = DateTimeFormatter.ofPattern("yyyy/M/d");
+    public PageResult<AdminCertificateRowDto> listCertificates(int page, int size) {
+        DateTimeFormatter d  = DateTimeFormatter.ofPattern("yyyy/M/d");
         DateTimeFormatter dt = DateTimeFormatter.ofPattern("yyyy/M/d HH:mm:ss");
 
-        return certRepo.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit))
-                .stream().map(c -> toRow(c, d, dt))
-                .collect(Collectors.toList());
+        size = Math.max(1, Math.min(size, 200)); // 上限保护
+        page = Math.max(0, page);
+
+        Page<AnnivCertificate> p = certRepo.findPageByOrderByCreatedAtDesc(PageRequest.of(page, size));
+        List<AdminCertificateRowDto> items = p.stream()
+                .map(c -> toRow(c, d, dt))
+                .collect(java.util.stream.Collectors.toList());
+
+        return new PageResult<>(items, p.getTotalElements(), page, size);
     }
+
 
     private AdminCertificateRowDto toRow(AnnivCertificate c,
                                          DateTimeFormatter d, DateTimeFormatter dt) {

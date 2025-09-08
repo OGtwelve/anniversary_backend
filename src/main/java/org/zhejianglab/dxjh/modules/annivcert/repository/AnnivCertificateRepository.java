@@ -1,5 +1,6 @@
 package org.zhejianglab.dxjh.modules.annivcert.repository;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -41,5 +42,10 @@ public interface AnnivCertificateRepository extends JpaRepository<AnnivCertifica
     Optional<AnnivCertificate> findByFullNo(String fullNo);
 
     long deleteByFullNo(String fullNo);
+
+
+    // 原来就是排序查询，这里让它返回 Page
+    Page<AnnivCertificate> findPageByOrderByCreatedAtDesc(Pageable pageable);
+
 
 }
