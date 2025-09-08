@@ -41,7 +41,9 @@ public class AnnivCertificate extends BaseEntity {
     @Column(name = "wishes", columnDefinition = "LONGTEXT")
     String wishes;
 
+    @Column(name = "ip", columnDefinition = "LONGTEXT")
     String ip;
+    @Column(name = "ua", columnDefinition = "LONGTEXT")
     String ua;
 
 }

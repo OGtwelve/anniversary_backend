@@ -5,6 +5,13 @@
 sudo -u app /usr/bin/java -Xms512m -Xmx1024m -Dfile.encoding=UTF-8 -Dserver.port=8081 -Dspring.profiles.active=prod -Dspring.datasource.url="jdbc:mysql://127.0.0.1:3306/zjlab?useSSL=false&serverTimezone=Asia/Jakarta&characterEncoding=utf8" -Dspring.datasource.username=root -Dspring.datasource.password='Tupac1963!' -jar /srv/anniv-backend/releases/app.jar
 
 
+ts=$(date +%F_%H%M%S)
+mysqldump -h 127.0.0.1 -P 3306 -u appuser -p \
+  --single-transaction --quick --routines --triggers --events \
+  --no-tablespaces \
+  zjlab | gzip > /srv/database-backup/zjlab_${ts}.sql.gz
+
+
 systemctl stop anniv-backend || true
 systemctl start anniv-backend || true
 
@@ -63,9 +70,34 @@ sudo systemctl enable --now anniv-backend
 sudo systemctl status anniv-backend --no-pager -l | sed -n '1,14p'
 curl -i http://127.0.0.1:8081/actuator/health
 
+# 1) 备份（示例）
+ts=$(date +%F_%H%M%S)
+mysqldump -h 127.0.0.1 -P 3306 -u appuser -p --single-transaction --quick zjlab \
+  | gzip > /srv/database-backup/zjlab_${ts}.sql.gz
+
+
+flyway \
+  -url=jdbc:mysql://127.0.0.1:3306/zjlab \
+  -user=appuser -password=Tupac1963! \
+  -locations=filesystem:/srv/anniv-backend/db/migration \
+  repair
+
+$URL = 'jdbc:mysql://127.0.0.1:3306/zjlab_anniversary?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai'
+mvn org.flywaydb:flyway-maven-plugin:8.5.13:repair `
+  -Dflyway.url="$URL" `
+  -Dflyway.user=root `
+  -Dflyway.password="root" `
+  -Dflyway.locations=filesystem:src/main/resources/db/migration
+
+
 sudo journalctl -u anniv-backend -n 50 --no-pager
 
 mysql -h 127.0.0.1 -P 3306 -u appuser -p
+
+scp -P 22 zjlab@10.101.88.143:/srv/database-backup/*.sql.gz C:\Users\ogtwe\Desktop\之江实验室\数据库备份
+
+use zjlab;
+select count(1) from anniv_certificate;
 
 Tupac1963!
 
