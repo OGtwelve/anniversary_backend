@@ -9,6 +9,7 @@ import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivCertificate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,6 +47,9 @@ public interface AnnivCertificateRepository extends JpaRepository<AnnivCertifica
 
     // 原来就是排序查询，这里让它返回 Page
     Page<AnnivCertificate> findPageByOrderByCreatedAtDesc(Pageable pageable);
+
+
+    List<AnnivCertificate> findByFullNoIn(Collection<String> fullNos);
 
 
 }

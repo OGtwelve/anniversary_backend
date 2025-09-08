@@ -27,23 +27,25 @@ public class AdminExportController {
 
     @PostMapping("/certificates/export")
     public ResponseEntity<byte[]> export(@RequestBody AdminExportRequest req) throws UnsupportedEncodingException {
-        String fmt = (req.getFormat() == null || req.getFormat().isEmpty()) ? "csv" : req.getFormat().toLowerCase();
+        String fmt = (req.getFormat() == null || req.getFormat().isEmpty())
+                ? "csv" : req.getFormat().toLowerCase();
+
+        int limit = req.getLimit() == null ? 1000 : Math.min(req.getLimit(), 5000);
 
         String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String fileName = "证书导出-" + ts + "." + ("xlsx".equals(fmt) ? "xlsx" : "csv");
+        String fileName = "证书导出-" + ts + ("xlsx".equals(fmt) ? ".xlsx" : ".csv");
 
         byte[] data;
         String contentType;
 
         if ("xlsx".equals(fmt)) {
-            // 如需启用 XLSX，请在 AdminExportService 实现 exportXlsx 再放开这里：
-            // data = exportSvc.exportXlsx(req.getColumns(), req.getLimit(), req.getQ(), req.getFromDate(), req.getToDate());
-            // contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            // 暂时回退到 CSV，避免引入依赖
-            data = exportSvc.exportCsv(req.getColumns(), req.getLimit(), req.getQ(), req.getFromDate(), req.getToDate());
+            // 仍然用 CSV 回退
+            data = exportSvc.exportCsv(req.getColumns(), limit, req.getQ(),
+                    req.getFromDate(), req.getToDate(), req.getIds());
             contentType = "text/csv; charset=UTF-8";
         } else {
-            data = exportSvc.exportCsv(req.getColumns(), req.getLimit(), req.getQ(), req.getFromDate(), req.getToDate());
+            data = exportSvc.exportCsv(req.getColumns(), limit, req.getQ(),
+                    req.getFromDate(), req.getToDate(), req.getIds());
             contentType = "text/csv; charset=UTF-8";
         }
 
@@ -53,5 +55,6 @@ public class AdminExportController {
                 .header(HttpHeaders.CONTENT_TYPE, contentType)
                 .body(data);
     }
+
 
 }

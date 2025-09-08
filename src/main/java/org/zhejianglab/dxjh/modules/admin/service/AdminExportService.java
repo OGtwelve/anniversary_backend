@@ -38,7 +38,7 @@ public class AdminExportService {
         HEADER_MAP.put("startDate","入职时间");
         HEADER_MAP.put("workDays", "工龄(天)");
         HEADER_MAP.put("wishes",   "祝福语");
-        HEADER_MAP.put("createdAt","生成时间");
+        HEADER_MAP.put("createdAt","首次注册时间");
     }
 
     // 列 key -> 提取函数
@@ -55,42 +55,83 @@ public class AdminExportService {
 
     private static String n(String s){ return s == null ? "" : s; }
 
-    public byte[] exportCsv(List<String> columns, Integer limit, String q, String fromDate, String toDate) {
+    public byte[] exportCsv(List<String> columns,
+                            Integer limit,
+                            String q,
+                            String fromDate,
+                            String toDate,
+                            List<String> ids) {
         List<String> cols = normalizeColumns(columns);
+        // 上限保护
+        final int pageSize = Math.max(1, Math.min(limit == null ? 1000 : limit, 5000));
 
-        int pageSize = Math.max(1, Math.min(limit == null ? 1000 : limit, 5000));
+        List<AnnivCertificate> list;
 
-        // 简单过滤（如果你已经有复杂查询，可以替换为自定义仓库方法）
-        List<AnnivCertificate> list = certRepo.findAllByOrderByCreatedAtDesc(PageRequest.of(0, pageSize));
-        if (q != null && !q.isEmpty()) {
-            final String kw = q.trim();
-            list = list.stream().filter(c ->
-                    contains(c.getFullNo(), kw) || contains(c.getName(), kw) || contains(c.getWorkNo(), kw)
-            ).collect(Collectors.toList());
+        // ① 优先：前端勾选的行（ids）
+        if (ids != null && !ids.isEmpty()) {
+            // 这里假设 ids 是 “证书编号 fullNo”；如果你传的是主键 id，下面这一句换成 findByIdIn(ids)
+            list = certRepo.findByFullNoIn(ids);
+
+            // 按前端勾选顺序排序
+            Map<String, Integer> order = new HashMap<>();
+            for (int i = 0; i < ids.size(); i++) order.put(ids.get(i), i);
+            list.sort(Comparator.comparingInt(c -> order.getOrDefault(c.getFullNo(), Integer.MAX_VALUE)));
+
+            // 仍然尊重 limit
+        } else {
+            // ② 普通导出：q / 日期范围 / limit
+            list = certRepo.findAllByOrderByCreatedAtDesc(PageRequest.of(0, pageSize));
+
+            if (q != null && !q.isEmpty()) {
+                final String kw = q.trim();
+                list = list.stream()
+                        .filter(c -> contains(c.getFullNo(), kw)
+                                || contains(c.getName(), kw)
+                                || contains(c.getWorkNo(), kw))
+                        .collect(Collectors.toList());
+            }
+
+            if ((fromDate != null && !fromDate.isEmpty()) || (toDate != null && !toDate.isEmpty())) {
+                LocalDateTime from = (fromDate == null || fromDate.isEmpty())
+                        ? LocalDate.MIN.atStartOfDay()
+                        : LocalDate.parse(fromDate).atStartOfDay();
+
+                // 结束时间含当日 23:59:59
+                LocalDateTime to = (toDate == null || toDate.isEmpty())
+                        ? LocalDate.MAX.atTime(23, 59, 59)
+                        : LocalDate.parse(toDate).atTime(23, 59, 59);
+
+                list = list.stream()
+                        .filter(c -> {
+                            LocalDateTime t = c.getCreatedAt();
+                            return t != null && !t.isBefore(from) && !t.isAfter(to);
+                        })
+                        .collect(Collectors.toList());
+            }
+
+            // 再截一次，确保不超过 limit
         }
-        if ((fromDate != null && !fromDate.isEmpty()) || (toDate != null && !toDate.isEmpty())) {
-            LocalDateTime from = fromDate == null || fromDate.isEmpty() ? LocalDate.MIN.atStartOfDay()
-                    : LocalDate.parse(fromDate).atStartOfDay();
-            LocalDateTime to = toDate == null || toDate.isEmpty() ? LocalDate.MAX.atTime(23,59,59)
-                    : LocalDate.parse(toDate).atTime(23,59,59);
-            list = list.stream()
-                    .filter(c -> c.getCreatedAt() != null && !c.getCreatedAt().isBefore(from) && !c.getCreatedAt().isAfter(to))
-                    .collect(Collectors.toList());
+        if (list.size() > pageSize) {
+            list = list.subList(0, pageSize);
         }
 
-        // CSV 生成（含 UTF-8 BOM，避免 Excel 中文乱码）
+        // —— 生成 CSV（含 UTF-8 BOM，Excel 友好）
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            // 写 BOM
+            // BOM
             out.write(0xEF); out.write(0xBB); out.write(0xBF);
 
             // 表头
-            String header = cols.stream().map(HEADER_MAP::get).collect(Collectors.joining(","));
+            String header = cols.stream()
+                    .map(HEADER_MAP::get)  // 你已有的“列名中文”映射
+                    .collect(Collectors.joining(","));
             out.write((header + "\n").getBytes(StandardCharsets.UTF_8));
 
             // 数据
             for (AnnivCertificate c : list) {
                 String line = cols.stream()
-                        .map(k -> csvEscape(FIELD_EXTRACTOR.getOrDefault(k, cc -> "").apply(c)))
+                        .map(k -> csvEscape(FIELD_EXTRACTOR
+                                .getOrDefault(k, cc -> "")
+                                .apply(c)))            // 你已有的“取值函数”映射
                         .collect(Collectors.joining(","));
                 out.write((line + "\n").getBytes(StandardCharsets.UTF_8));
             }
@@ -99,6 +140,7 @@ public class AdminExportService {
             throw new RuntimeException("导出失败", e);
         }
     }
+
 
     private static boolean contains(String src, String kw){ return src != null && src.contains(kw); }
 
