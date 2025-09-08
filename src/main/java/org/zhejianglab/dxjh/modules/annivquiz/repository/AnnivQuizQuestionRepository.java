@@ -11,4 +11,6 @@ import java.util.List;
  */
 public interface AnnivQuizQuestionRepository extends JpaRepository<AnnivQuizQuestion, Long> {
     List<AnnivQuizQuestion> findByQuizIdOrderByIdxNoAsc(Long quizId);
+
+    long countByQuizId(Long quizId); // 用于拿题目数量
 }

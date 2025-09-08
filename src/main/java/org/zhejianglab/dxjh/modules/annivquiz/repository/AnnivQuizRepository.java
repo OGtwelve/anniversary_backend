@@ -13,4 +13,7 @@ import java.util.Optional;
 public interface AnnivQuizRepository extends JpaRepository<AnnivQuiz, Long> {
     Optional<AnnivQuiz> findFirstByIsActiveTrue();
     Optional<AnnivQuiz> findByQuizCode(String quizCode);
+
+    Optional<AnnivQuiz> findFirstByIsActiveTrueOrderByCreatedAtDesc();
+
 }
