@@ -13,6 +13,7 @@ import java.util.Objects;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminCertificateRowDto_OpenDay;
 import org.zhejianglab.dxjh.modules.annivcert.dto.CertificateOpenDayDto;
 import org.zhejianglab.dxjh.modules.annivcert.dto.UpdateCertificateRequest;
+import org.zhejianglab.dxjh.modules.annivcert.dto.UpdateCertificateRequestOpenDay;
 import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivCertificate_OpenDay;
 import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivScsQuota;
 import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivSeqCounter;
@@ -115,7 +116,7 @@ public class AnnivCertificate_OpenDayService {
     }
 
     @Transactional
-    public AdminCertificateRowDto_OpenDay update(String fullNo, UpdateCertificateRequest req) {
+    public AdminCertificateRowDto_OpenDay update(String fullNo, UpdateCertificateRequestOpenDay req) {
         AnnivCertificate_OpenDay c = certRepo.findByFullNo(fullNo)
                 .orElseThrow(() -> new IllegalArgumentException("证书不存在: " + fullNo));
 

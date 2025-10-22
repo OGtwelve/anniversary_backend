@@ -2,12 +2,15 @@ package org.zhejianglab.dxjh.modules.admin.web;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.zhejianglab.dxjh.modules.admin.dto.AdminExportRequest;
 import org.zhejianglab.dxjh.modules.admin.service.AdminExportService;
 import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivCertificate;
+import org.zhejianglab.dxjh.modules.annivcert.entity.AnnivCertificate_OpenDay;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -17,12 +20,12 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * @author :og-twelve
- * @date : 2025/9/8
+ * @date : 2025/10/22
  */
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/open_day_admin")
 @RequiredArgsConstructor
-public class AdminExportController {
+public class OpenDayExportController {
 
     private final AdminExportService exportSvc;
 
@@ -42,11 +45,11 @@ public class AdminExportController {
         if ("xlsx".equals(fmt)) {
             // 仍然用 CSV 回退
             data = exportSvc.exportCsv(req.getColumns(), limit, req.getQ(),
-                    req.getFromDate(), req.getToDate(), req.getIds(), AnnivCertificate.class);
+                    req.getFromDate(), req.getToDate(), req.getIds(), AnnivCertificate_OpenDay.class);
             contentType = "text/xlsx; charset=UTF-8";
         } else {
             data = exportSvc.exportCsv(req.getColumns(), limit, req.getQ(),
-                    req.getFromDate(), req.getToDate(), req.getIds(), AnnivCertificate.class);
+                    req.getFromDate(), req.getToDate(), req.getIds(), AnnivCertificate_OpenDay.class);
             contentType = "text/csv; charset=UTF-8";
         }
 
