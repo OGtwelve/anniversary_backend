@@ -30,7 +30,7 @@ public class AnnivCertificate_OpenDay extends BaseEntity {
     @Column(nullable=false)
     Integer seq;                // 1..1500
 
-    @Column(nullable=false, length=64)
+    @Column(nullable=false, length=64,columnDefinition = "LONGTEXT")
     String name;
 
     @Column(name="date_of_birth", nullable=false)
