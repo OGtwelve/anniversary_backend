@@ -110,7 +110,7 @@ public class AnnivCertificateService {
 
         // 如果需要前125个都在一个卫星下的话, 就用下面的机制
         // 3) 查找所有组，并按顺序逐个组分配
-        List<AnnivScsQuota> quotas = quotaRepo.findAllByOrderByScsCodeAsc(); // 查找所有组并按 SCS 码排序
+        List<AnnivScsQuota> quotas = quotaRepo.findAllByVersionCodeOrderByScsCodeAsc("1"); // 查找所有组并按 SCS 码排序
         String scs = getScs(quotas);
 
 

@@ -13,6 +13,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "anniv_quota")
+@IdClass(AnnivScsQuotaId.class)
 @Setter
 @Getter
 public class AnnivScsQuota {
@@ -26,5 +27,9 @@ public class AnnivScsQuota {
 
     @Column(name="limit_cnt", nullable=false)
     Integer limitCnt = 125;
+
+    @Id
+    @Column(name="version_code")
+    String versionCode;
 
 }

@@ -10,6 +10,7 @@ public final class SecurityPaths {
             "/api/auth/login",
             "/api/auth/check-open",
             "/api/anniv/**",          // 你允许匿名访问的业务端点
+            "/api/anniv_open_day/**",  // 开放日接口放开
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-resources/**",
